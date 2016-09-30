@@ -16,6 +16,50 @@ import (
 	"github.com/influxdata/influxdb/client/v2"
 )
 
+// maintain a frequency table by measurement and tag value
+// this will allow us to configure service protection on influx outputs
+//
+// {
+// 	"http.response" : {
+// 		"method": {
+// 			"GET": 4,
+//			"POST": 7
+//		}.
+// 		"path": {
+// 			"foo": 73,
+//			"bar": 12
+//		}
+// 	}
+// }
+//
+
+var freqTable = map[string]map[string]map[string]int64{}
+
+func DumpFreqTable(frequencyTable map[string]map[string]map[string]int64) {
+	for measurementName, measurement := range frequencyTable {
+		log.Printf("Measurement %s:  ", measurementName)
+		var tagCount = 0
+		var tagValueCount = 0
+		var dataPointCount = 0
+		var maxTagLen = 0
+		var maxTagName = ""
+		for tagName, tag := range measurement {
+			tagCount += 1
+			var tagLen = len(tag)
+			if tagLen > maxTagLen {
+				maxTagLen = tagLen
+				maxTagName = tagName
+			}
+			for _, count := range tag {
+				tagValueCount += 1
+				dataPointCount += count
+			}
+		}
+		log.Printf(", tag Count: %d, total series cardinality: %d, total datapoints: %d, highest-cardinality tag: %s:%d\n", tagCount, tagValueCount, dataPointCount, maxTagName, maxTagLen)
+	}
+}
+
+
 type InfluxDB struct {
 	// URL is only for backwards compatability
 	URL              string
@@ -191,6 +235,12 @@ func (i *InfluxDB) Write(metrics []telegraf.Metric) error {
 	}
 
 	for _, metric := range metrics {
+		// collect meta-metrics for use in service protection
+		var measurementName = metric.Name()
+		var tags = metric.Tags()
+		for tagName, tagVal := range tags {
+			freqTable[measurementName][tagName][tagVal] += 1
+		}
 		bp.AddPoint(metric.Point())
 	}
 
@@ -214,6 +264,9 @@ func (i *InfluxDB) Write(metrics []telegraf.Metric) error {
 			break
 		}
 	}
+
+	// emit the current frequency table for service protection info
+	DumpFreqTable(freqTable)
 
 	return err
 }
