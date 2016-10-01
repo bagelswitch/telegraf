@@ -36,11 +36,11 @@ import (
 var freqTable = map[string]map[string]map[string]int64{}
 
 func DumpFreqTable(frequencyTable map[string]map[string]map[string]int64) {
+	log.Printf("%20s | %20s | %20s | %20s | %20s | %20s\n", "Measurement", "tag count", "series cardinality", "total datapoints", "worst tag", "worst tag cardinality")
 	for measurementName, measurement := range frequencyTable {
-		log.Printf("Measurement %s:  ", measurementName)
 		var tagCount = 0
 		var tagValueCount = 0
-		var dataPointCount = 0
+		var dataPointCount int64 = 0
 		var maxTagLen = 0
 		var maxTagName = ""
 		for tagName, tag := range measurement {
@@ -55,7 +55,7 @@ func DumpFreqTable(frequencyTable map[string]map[string]map[string]int64) {
 				dataPointCount += count
 			}
 		}
-		log.Printf(", tag Count: %d, total series cardinality: %d, total datapoints: %d, highest-cardinality tag: %s:%d\n", tagCount, tagValueCount, dataPointCount, maxTagName, maxTagLen)
+		log.Printf("%20s | %20d | %20d | %20d | %20s | %20d\n", measurementName, tagCount, tagValueCount, dataPointCount, maxTagName, maxTagLen)
 	}
 }
 
@@ -237,9 +237,18 @@ func (i *InfluxDB) Write(metrics []telegraf.Metric) error {
 	for _, metric := range metrics {
 		// collect meta-metrics for use in service protection
 		var measurementName = metric.Name()
+		if _, measureok := freqTable[measurementName]; !measureok {
+			freqTable[measurementName] = map[string]map[string]int64{}
+		}
 		var tags = metric.Tags()
 		for tagName, tagVal := range tags {
-			freqTable[measurementName][tagName][tagVal] += 1
+			if _, tagok := freqTable[measurementName][tagName]; !tagok {
+				freqTable[measurementName][tagName] = map[string]int64{}
+			}
+			if _, ok := freqTable[measurementName][tagName][tagVal]; !ok {
+				freqTable[measurementName][tagName][tagVal] = int64(1)
+			}
+			freqTable[measurementName][tagName][tagVal] += int64(1)
 		}
 		bp.AddPoint(metric.Point())
 	}
