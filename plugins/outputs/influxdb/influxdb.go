@@ -33,10 +33,11 @@ import (
 // }
 //
 
+var lastDump = time.Now()
 var freqTable = map[string]map[string]map[string]int64{}
 
 func DumpFreqTable(frequencyTable map[string]map[string]map[string]int64) {
-	log.Printf("%20s | %20s | %20s | %20s | %20s | %20s\n", "Measurement", "tag count", "series cardinality", "total datapoints", "worst tag", "worst tag cardinality")
+	log.Printf("%20s | %10s | %15s | %15s | %15s | %15s\n", "Measurement", "tag count", "series cardinality", "total datapoints", "worst tag", "worst tag cardinality")
 	for measurementName, measurement := range frequencyTable {
 		var tagCount = 0
 		var tagValueCount = 0
@@ -55,7 +56,7 @@ func DumpFreqTable(frequencyTable map[string]map[string]map[string]int64) {
 				dataPointCount += count
 			}
 		}
-		log.Printf("%20s | %20d | %20d | %20d | %20s | %20d\n", measurementName, tagCount, tagValueCount, dataPointCount, maxTagName, maxTagLen)
+		log.Printf("%20s | %10d | %15d | %15d | %15s | %15d\n", measurementName, tagCount, tagValueCount, dataPointCount, maxTagName, maxTagLen)
 	}
 }
 
@@ -275,8 +276,11 @@ func (i *InfluxDB) Write(metrics []telegraf.Metric) error {
 	}
 
 	// emit the current frequency table for service protection info
-	DumpFreqTable(freqTable)
-
+	var elapsed = time.Since(lastDump)
+	if elapsed.Seconds() > float64(60) {
+		lastDump = time.Now()
+		DumpFreqTable(freqTable)
+	}
 	return err
 }
 
