@@ -5,6 +5,7 @@ import (
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/plugins/inputs"
 	"sync"
+	"strings"
 )
 
 type Couchbase struct {
@@ -73,16 +74,25 @@ func (r *Couchbase) gatherServer(addr string, acc telegraf.Accumulator, pool *co
 		}
 		pool = &p
 	}
+
+	// Remove the credential info within addr if any
+	// Eg., http://admin:secret@localhost:8091 -> http://localhost:8091
+	clean_addr := addr
+	if strings.ContainsAny(addr, "@") {
+		sub1 := strings.SplitAfterN(addr, "://", 2)[0]
+		sub2 := strings.SplitN(addr, "@", 2)[1]
+		clean_addr = sub1 + sub2
+	}
 	for i := 0; i < len(pool.Nodes); i++ {
 		node := pool.Nodes[i]
-		tags := map[string]string{"cluster": addr, "hostname": node.Hostname}
+		tags := map[string]string{"cluster": clean_addr, "hostname": node.Hostname}
 		fields := make(map[string]interface{})
 		fields["memory_free"] = node.MemoryFree
 		fields["memory_total"] = node.MemoryTotal
 		acc.AddFields("couchbase_node", fields, tags)
 	}
 	for bucketName, _ := range pool.BucketMap {
-		tags := map[string]string{"cluster": addr, "bucket": bucketName}
+		tags := map[string]string{"cluster": clean_addr, "bucket": bucketName}
 		bs := pool.BucketMap[bucketName].BasicStats
 		fields := make(map[string]interface{})
 		fields["quota_percent_used"] = bs["quotaPercentUsed"]
