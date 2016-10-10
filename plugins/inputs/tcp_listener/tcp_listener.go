@@ -15,7 +15,7 @@ import (
 )
 
 type TcpListener struct {
-	debugFilter	       string `toml:"debug_filter"`
+	DebugFilter	       string `toml:"debug_filter"`
 	ServiceAddress         string
 	AllowedPendingMessages int
 	MaxTCPConnections      int `toml:"max_tcp_connections"`
@@ -53,6 +53,7 @@ var malformedwarn = "WARNING: tcp_listener has received %d malformed packets" +
 	" thus far."
 
 const sampleConfig = `
+  debug_filter = "fos"
   ## Address and port to host TCP listener on
   service_address = ":8094"
 
@@ -249,7 +250,7 @@ func (t *TcpListener) tcpParser() error {
 			}
 			var packetString = string(packet[:])
 
-			var doDebug = len(t.debugFilter) != 0 && strings.Contains(packetString, t.debugFilter)
+			var doDebug = len(t.DebugFilter) != 0 && strings.Contains(packetString, t.DebugFilter)
 			if doDebug {
 				log.Printf("\nTCP Input Debug Filter matched incoming packet: %s\n", packetString)
 			}
@@ -258,7 +259,7 @@ func (t *TcpListener) tcpParser() error {
 				for _, m := range metrics {
 					if doDebug {
 						var metricString = m.String()
-						if strings.Contains(metricString, t.debugFilter) {
+						if strings.Contains(metricString, t.DebugFilter) {
 							log.Printf("TCP Input Debug metric: %s\n", metricString)
 						}
 					}

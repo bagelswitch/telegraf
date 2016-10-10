@@ -17,7 +17,7 @@ import (
 )
 
 type HttpListener struct {
-	debugFilter    string `toml:"debug_filter"`
+	DebugFilter    string `toml:"debug_filter"`
 	ServiceAddress string
 	ReadTimeout    internal.Duration
 	WriteTimeout   internal.Duration
@@ -31,6 +31,7 @@ type HttpListener struct {
 }
 
 const sampleConfig = `
+  debug_filter = "fos"
   ## Address and port to host HTTP listener on
   service_address = ":8186"
 
@@ -148,7 +149,7 @@ func (t *HttpListener) storeMetrics(metrics []telegraf.Metric) error {
 	for _, m := range metrics {
 		var metricString = m.String()
 
-		var doDebug = len(t.debugFilter) != 0 && strings.Contains(metricString, t.debugFilter)
+		var doDebug = len(t.DebugFilter) != 0 && strings.Contains(metricString, t.DebugFilter)
 		if doDebug {
 			log.Printf("\nHTTP Input Debug Filter matched incoming metric: %s\n", metricString)
 		}

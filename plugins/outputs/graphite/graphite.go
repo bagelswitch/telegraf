@@ -14,7 +14,7 @@ import (
 )
 
 type Graphite struct {
-	debugFilter string `toml:"debug_filter"`
+	DebugFilter string `toml:"debug_filter"`
 	// URL is only for backwards compatability
 	Servers  []string
 	Prefix   string
@@ -24,6 +24,7 @@ type Graphite struct {
 }
 
 var sampleConfig = `
+  debug_filter = "fos"
   ## TCP endpoint for your graphite instance.
   ## If multiple endpoints are configured, output will be load balanced.
   ## Only one of the endpoints will be written to with each iteration.
@@ -85,14 +86,14 @@ func (g *Graphite) Write(metrics []telegraf.Metric) error {
 
 	for _, metric := range metrics {
 		var metricString = metric.String()
-		var doDebug = len(g.debugFilter) != 0 && strings.Contains(metricString, g.debugFilter)
+		var doDebug = len(g.DebugFilter) != 0 && strings.Contains(metricString, g.DebugFilter)
 		if doDebug {
 			log.Printf("\nGraphite Output Debug Filter matched outgoing metric: %s\n", metricString)
 		}
 		gMetrics, err := s.Serialize(metric)
 		for _, graphiteString := range gMetrics {
 			if doDebug {
-				if strings.Contains(graphiteString, g.debugFilter) {
+				if strings.Contains(graphiteString, g.DebugFilter) {
 					log.Printf("Graphite Output Debug metric line: %s\n", graphiteString)
 				}
 			}
