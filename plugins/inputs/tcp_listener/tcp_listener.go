@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"strings"
 
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/internal"
@@ -14,6 +15,7 @@ import (
 )
 
 type TcpListener struct {
+	debugFilter	       string `toml:"debug_filter"`
 	ServiceAddress         string
 	AllowedPendingMessages int
 	MaxTCPConnections      int `toml:"max_tcp_connections"`
@@ -245,15 +247,28 @@ func (t *TcpListener) tcpParser() error {
 			if len(packet) == 0 {
 				continue
 			}
+			var packetString = string(packet[:])
+
+			var doDebug = len(t.debugFilter) != 0 && strings.Contains(packetString, t.debugFilter)
+			if doDebug {
+				log.Printf("\nTCP Input Debug Filter matched incoming packet: %s\n", packetString)
+			}
 			metrics, err = t.parser.Parse(packet)
 			if err == nil {
 				for _, m := range metrics {
+					if doDebug {
+						var metricString = string(m)
+						if strings.Contains(metricString, t.debugFilter) {
+							log.Printf("TCP Input Debug metric: %s\n", metricString)
+						}
+					}
 					t.acc.AddFields(m.Name(), m.Fields(), m.Tags(), m.Time())
 				}
 			} else {
 				t.malformed++
 				if t.malformed == 1 || t.malformed%1000 == 0 {
 					log.Printf(malformedwarn, t.malformed)
+					log.Printf("\nMost recent offending packet: %s\n", packetString)
 				}
 			}
 		}

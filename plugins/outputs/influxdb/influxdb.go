@@ -62,6 +62,7 @@ func DumpFreqTable(frequencyTable map[string]map[string]map[string]int64) {
 
 
 type InfluxDB struct {
+	debugFilter    string `toml:"debug_filter"`
 	// URL is only for backwards compatability
 	URL              string
 	URLs             []string `toml:"urls"`
@@ -236,6 +237,11 @@ func (i *InfluxDB) Write(metrics []telegraf.Metric) error {
 	}
 
 	for _, metric := range metrics {
+		var metricString = string(metric)
+		var doDebug = len(i.debugFilter) != 0 && strings.Contains(metricString, i.debugFilter)
+		if doDebug {
+			log.Printf("\nInfluxDB Output Debug Filter matched outgoing metric: %s\n", metricString)
+		}
 		// collect meta-metrics for use in service protection
 		var measurementName = metric.Name()
 		if _, measureok := freqTable[measurementName]; !measureok {

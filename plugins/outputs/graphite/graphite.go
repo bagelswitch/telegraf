@@ -14,6 +14,7 @@ import (
 )
 
 type Graphite struct {
+	debugFilter string `toml:"debug_filter"`
 	// URL is only for backwards compatability
 	Servers  []string
 	Prefix   string
@@ -83,7 +84,19 @@ func (g *Graphite) Write(metrics []telegraf.Metric) error {
 	}
 
 	for _, metric := range metrics {
+		var metricString = string(metric)
+		var doDebug = len(g.debugFilter) != 0 && strings.Contains(metricString, g.debugFilter)
+		if doDebug {
+			log.Printf("\nGraphite Output Debug Filter matched outgoing metric: %s\n", metricString)
+		}
 		gMetrics, err := s.Serialize(metric)
+		for _, graphiteString := range gMetrics {
+			if doDebug {
+				if strings.Contains(graphiteString, g.debugFilter) {
+					log.Printf("Graphite Output Debug metric line: %s\n", graphiteString)
+				}
+			}
+		}
 		if err != nil {
 			log.Printf("Error serializing some metrics to graphite: %s", err.Error())
 		}
