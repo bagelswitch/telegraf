@@ -237,7 +237,7 @@ func (i *InfluxDB) Write(metrics []telegraf.Metric) error {
 	}
 
 	for _, metric := range metrics {
-		var metricString = string(metric)
+		var metricString = metric.String()
 		var doDebug = len(i.debugFilter) != 0 && strings.Contains(metricString, i.debugFilter)
 		if doDebug {
 			log.Printf("\nInfluxDB Output Debug Filter matched outgoing metric: %s\n", metricString)

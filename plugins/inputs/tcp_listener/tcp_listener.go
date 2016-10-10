@@ -257,7 +257,7 @@ func (t *TcpListener) tcpParser() error {
 			if err == nil {
 				for _, m := range metrics {
 					if doDebug {
-						var metricString = string(m)
+						var metricString = m.String()
 						if strings.Contains(metricString, t.debugFilter) {
 							log.Printf("TCP Input Debug metric: %s\n", metricString)
 						}

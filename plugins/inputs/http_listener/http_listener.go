@@ -146,7 +146,7 @@ func (t *HttpListener) storeMetrics(metrics []telegraf.Metric) error {
 	defer t.Unlock()
 
 	for _, m := range metrics {
-		var metricString = string(m)
+		var metricString = m.String()
 
 		var doDebug = len(t.debugFilter) != 0 && strings.Contains(metricString, t.debugFilter)
 		if doDebug {

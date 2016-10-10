@@ -84,7 +84,7 @@ func (g *Graphite) Write(metrics []telegraf.Metric) error {
 	}
 
 	for _, metric := range metrics {
-		var metricString = string(metric)
+		var metricString = metric.String()
 		var doDebug = len(g.debugFilter) != 0 && strings.Contains(metricString, g.debugFilter)
 		if doDebug {
 			log.Printf("\nGraphite Output Debug Filter matched outgoing metric: %s\n", metricString)
