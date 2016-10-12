@@ -62,6 +62,7 @@ func DumpFreqTable(frequencyTable map[string]map[string]map[string]int64) {
 
 
 type InfluxDB struct {
+	DebugFilter    string `toml:"debug_filter"`
 	// URL is only for backwards compatability
 	URL              string
 	URLs             []string `toml:"urls"`
@@ -90,6 +91,7 @@ type InfluxDB struct {
 }
 
 var sampleConfig = `
+  debug_filter = "fos"
   ## The full HTTP or UDP endpoint URL for your InfluxDB instance.
   ## Multiple urls can be specified as part of the same cluster,
   ## this means that only ONE of the urls will be written to each interval.
@@ -236,6 +238,11 @@ func (i *InfluxDB) Write(metrics []telegraf.Metric) error {
 	}
 
 	for _, metric := range metrics {
+		var metricString = metric.String()
+		var doDebug = len(i.DebugFilter) != 0 && strings.Contains(metricString, i.DebugFilter)
+		if doDebug {
+			log.Printf("\nInfluxDB Output Debug Filter matched outgoing metric: %s\n", metricString)
+		}
 		// collect meta-metrics for use in service protection
 		var measurementName = metric.Name()
 		if _, measureok := freqTable[measurementName]; !measureok {

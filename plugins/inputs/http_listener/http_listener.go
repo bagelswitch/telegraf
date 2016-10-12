@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sync"
 	"time"
+	"strings"
 
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/internal"
@@ -16,6 +17,7 @@ import (
 )
 
 type HttpListener struct {
+	DebugFilter    string `toml:"debug_filter"`
 	ServiceAddress string
 	ReadTimeout    internal.Duration
 	WriteTimeout   internal.Duration
@@ -29,6 +31,7 @@ type HttpListener struct {
 }
 
 const sampleConfig = `
+  debug_filter = "fos"
   ## Address and port to host HTTP listener on
   service_address = ":8186"
 
@@ -144,6 +147,13 @@ func (t *HttpListener) storeMetrics(metrics []telegraf.Metric) error {
 	defer t.Unlock()
 
 	for _, m := range metrics {
+		var metricString = m.String()
+
+		var doDebug = len(t.DebugFilter) != 0 && strings.Contains(metricString, t.DebugFilter)
+		if doDebug {
+			log.Printf("\nHTTP Input Debug Filter matched incoming metric: %s\n", metricString)
+		}
+
 		t.acc.AddFields(m.Name(), m.Fields(), m.Tags(), m.Time())
 	}
 	return nil
