@@ -113,7 +113,7 @@ func (t *HttpListener) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	body, err := ioutil.ReadAll(req.Body)
 
 	if err != nil {
-		log.Printf("Problem reading request: [%s], Error: %s\n", string(body), err)
+		log.Printf("Problem reading request: [%s], Error: %s\n", string(body)[0:80], err)
 		http.Error(res, "ERROR reading request", http.StatusInternalServerError)
 		return
 	}
@@ -127,7 +127,7 @@ func (t *HttpListener) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			t.storeMetrics(metrics)
 			res.WriteHeader(http.StatusNoContent)
 		} else {
-			log.Printf("Problem parsing body: [%s], Error: %s\n", string(body), err)
+			log.Printf("Problem parsing body: [%s], Error: %s\n", string(body)[0:80], err)
 			http.Error(res, "ERROR parsing metrics", http.StatusInternalServerError)
 		}
 	} else if path == "query" {
