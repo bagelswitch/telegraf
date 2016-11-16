@@ -99,7 +99,7 @@ func (g *Graphite) Write(metrics []telegraf.Metric) error {
 			}
 		}
 		if err != nil {
-			log.Printf("Error serializing some metrics to graphite: %s", err.Error())
+			log.Printf("E! Error serializing some metrics to graphite: %s", err.Error())
 		}
 		bp = append(bp, gMetrics...)
 	}
@@ -116,7 +116,7 @@ func (g *Graphite) Write(metrics []telegraf.Metric) error {
 		}
 		if _, e := g.conns[n].Write([]byte(graphitePoints)); e != nil {
 			// Error
-			log.Println("ERROR: " + e.Error())
+			log.Println("E! Graphite Error: " + e.Error())
 			// Let's try the next one
 		} else {
 			// Success
