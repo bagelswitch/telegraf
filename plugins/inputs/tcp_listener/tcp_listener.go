@@ -252,7 +252,7 @@ func (t *TcpListener) tcpParser() error {
 
 			var doDebug = len(t.DebugFilter) != 0 && strings.Contains(packetString, t.DebugFilter)
 			if doDebug {
-				log.Printf("\nTCP Input Debug Filter matched incoming packet: %s\n", packetString)
+				log.Printf("D! TCP Input Debug Filter matched incoming packet: %s\n", packetString)
 			}
 			metrics, err = t.parser.Parse(packet)
 			if err == nil {
@@ -260,7 +260,7 @@ func (t *TcpListener) tcpParser() error {
 					if doDebug {
 						var metricString = m.String()
 						if strings.Contains(metricString, t.DebugFilter) {
-							log.Printf("TCP Input Debug metric: %s\n", metricString)
+							log.Printf("D! TCP Input Debug metric: %s\n", metricString)
 						}
 					}
 					t.acc.AddFields(m.Name(), m.Fields(), m.Tags(), m.Time())
@@ -269,7 +269,7 @@ func (t *TcpListener) tcpParser() error {
 				t.malformed++
 				if t.malformed == 1 || t.malformed%1000 == 0 {
 					log.Printf(malformedwarn, t.malformed)
-					log.Printf("\nMost recent offending packet: %s\n", packetString)
+					log.Printf("D! Most recent offending packet: %s\n", packetString)
 				}
 			}
 		}

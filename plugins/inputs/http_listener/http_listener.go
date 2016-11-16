@@ -272,7 +272,7 @@ func (h *HTTPListener) parse(b []byte, t time.Time) error {
 
 		var doDebug = len(h.DebugFilter) != 0 && strings.Contains(metricString, h.DebugFilter)
 		if doDebug {
-			log.Printf("\nHTTP Input Debug Filter matched incoming metric: %s\n", metricString)
+			log.Printf("D! HTTP Input Debug Filter matched incoming metric: %s\n", metricString)
 		}
 
 		h.acc.AddFields(m.Name(), m.Fields(), m.Tags(), m.Time())

@@ -88,13 +88,13 @@ func (g *Graphite) Write(metrics []telegraf.Metric) error {
 		var metricString = metric.String()
 		var doDebug = len(g.DebugFilter) != 0 && strings.Contains(metricString, g.DebugFilter)
 		if doDebug {
-			log.Printf("\nGraphite Output Debug Filter matched outgoing metric: %s\n", metricString)
+			log.Printf("D! Graphite Output Debug Filter matched outgoing metric: %s\n", metricString)
 		}
 		gMetrics, err := s.Serialize(metric)
 		for _, graphiteString := range gMetrics {
 			if doDebug {
 				if strings.Contains(graphiteString, g.DebugFilter) {
-					log.Printf("Graphite Output Debug metric line: %s\n", graphiteString)
+					log.Printf("D! Graphite Output Debug metric line: %s\n", graphiteString)
 				}
 			}
 		}

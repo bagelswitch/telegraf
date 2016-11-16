@@ -37,7 +37,7 @@ var lastDump = time.Now()
 var freqTable = map[string]map[string]map[string]int64{}
 
 func DumpFreqTable(frequencyTable map[string]map[string]map[string]int64) {
-	log.Printf("%75s | %10s | %15s | %15s | %15s | %15s\n", "Measurement", "tag count", "series cardinality", "total datapoints", "worst tag", "worst tag cardinality")
+	log.Printf("D! %75s | %10s | %15s | %15s | %15s | %15s\n", "Measurement", "tag count", "series cardinality", "total datapoints", "worst tag", "worst tag cardinality")
 	for measurementName, measurement := range frequencyTable {
 		var tagCount = 0
 		var tagValueCount = 0
@@ -56,7 +56,7 @@ func DumpFreqTable(frequencyTable map[string]map[string]map[string]int64) {
 				dataPointCount += count
 			}
 		}
-		log.Printf("%75s | %10d | %15d | %15d | %15s | %15d\n", measurementName, tagCount, tagValueCount, dataPointCount, maxTagName, maxTagLen)
+		log.Printf("D! %75s | %10d | %15d | %15d | %15s | %15d\n", measurementName, tagCount, tagValueCount, dataPointCount, maxTagName, maxTagLen)
 	}
 }
 
@@ -241,7 +241,7 @@ func (i *InfluxDB) Write(metrics []telegraf.Metric) error {
 		var metricString = metric.String()
 		var doDebug = len(i.DebugFilter) != 0 && strings.Contains(metricString, i.DebugFilter)
 		if doDebug {
-			log.Printf("\nInfluxDB Output Debug Filter matched outgoing metric: %s\n", metricString)
+			log.Printf("D! InfluxDB Output Debug Filter matched outgoing metric: %s\n", metricString)
 		}
 		// collect meta-metrics for use in service protection
 		var measurementName = metric.Name()
