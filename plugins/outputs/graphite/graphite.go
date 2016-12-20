@@ -11,7 +11,6 @@ import (
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/plugins/outputs"
 	"github.com/influxdata/telegraf/plugins/serializers"
-	"github.com/influxdata/telegraf/metric"
 )
 
 type Graphite struct {
@@ -99,11 +98,9 @@ func (g *Graphite) Write(metrics []telegraf.Metric) error {
 			log.Printf("E! Error serializing some metrics to graphite: %s", err.Error())
 		}
 		if doDebug {
-			for _, graphiteBytes := range buf {
-				var graphiteString = string(graphiteBytes[:])
-				if strings.Contains(graphiteString, g.DebugFilter) {
-					log.Printf("D! Graphite Output Debug metric line: %s\n", graphiteString)
-				}
+			var graphiteString = string(buf[:])
+			if strings.Contains(graphiteString, g.DebugFilter) {
+				log.Printf("D! Graphite Output Debug metric line: %s\n", graphiteString)
 			}
 		}
 		batch = append(batch, buf...)
