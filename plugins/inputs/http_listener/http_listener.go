@@ -305,12 +305,15 @@ func (h *HTTPListener) serveWrite(res http.ResponseWriter, req *http.Request) {
 func (h *HTTPListener) parse(b []byte, t time.Time) error {
 	metrics, err := h.parser.ParseWithDefaultTime(b, t)
 
+	var doDebug = len(h.DebugFilter) != 0
 	for _, m := range metrics {
-		var metricString = m.String()
 
-		var doDebug = len(h.DebugFilter) != 0 && strings.Contains(metricString, h.DebugFilter)
 		if doDebug {
-			log.Printf("D! HTTP Input Debug Filter matched incoming metric: %s\n", metricString)
+			var metricString = m.String()
+			doDebug = doDebug && strings.Contains(metricString, h.DebugFilter)
+			if doDebug {
+				log.Printf("D! HTTP Input Debug Filter matched incoming metric: %s\n", metricString)
+			}
 		}
 
 		h.acc.AddFields(m.Name(), m.Fields(), m.Tags(), m.Time())

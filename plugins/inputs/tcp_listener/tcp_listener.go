@@ -271,11 +271,14 @@ func (t *TcpListener) tcpParser() error {
 			if len(packet) == 0 {
 				continue
 			}
-			var packetString = string(packet[:])
 
-			var doDebug = len(t.DebugFilter) != 0 && strings.Contains(packetString, t.DebugFilter)
+			var doDebug = len(t.DebugFilter) != 0
 			if doDebug {
-				log.Printf("D! TCP Input Debug Filter matched incoming packet: %s\n", packetString)
+				var packetString = string(packet[:])
+				doDebug = doDebug && strings.Contains(packetString, t.DebugFilter)
+				if doDebug {
+					log.Printf("D! TCP Input Debug Filter matched incoming packet: %s\n", packetString)
+				}
 			}
 			metrics, err = t.parser.Parse(packet)
 			if err == nil {
@@ -292,6 +295,7 @@ func (t *TcpListener) tcpParser() error {
 				t.malformed++
 				if t.malformed == 1 || t.malformed%1000 == 0 {
 					log.Printf(malformedwarn, t.malformed)
+					var packetString = string(packet[:])
 					log.Printf("D! Most recent offending packet: %s\n", packetString)
 				}
 			}

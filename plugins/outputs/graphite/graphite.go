@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/influxdata/telegraf"
@@ -84,19 +85,28 @@ func (g *Graphite) Write(metrics []telegraf.Metric) error {
 		return err
 	}
 
+	var doDebug = len(g.DebugFilter) != 0
 	for _, metric := range metrics {
+		if doDebug {
+			var metricString = metric.String()
+			doDebug = doDebug && strings.Contains(metricString, g.DebugFilter)
+			if doDebug {
+				log.Printf("D! Graphite Output Debug Filter matched outgoing metric: %s\n", metricString)
+			}
+		}
 		buf, err := s.Serialize(metric)
 		if err != nil {
 			log.Printf("E! Error serializing some metrics to graphite: %s", err.Error())
 		}
-		batch = append(batch, buf...)
-		for _, graphiteString := range buf {
-			if doDebug {
+		if doDebug {
+			for _, graphiteBytes := range buf {
+				var graphiteString = string(graphiteBytes[:])
 				if strings.Contains(graphiteString, g.DebugFilter) {
 					log.Printf("D! Graphite Output Debug metric line: %s\n", graphiteString)
 				}
 			}
 		}
+		batch = append(batch, buf...)
 	}
 
 	// This will get set to nil if a successful write occurs

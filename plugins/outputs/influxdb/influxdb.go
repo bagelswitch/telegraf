@@ -237,11 +237,14 @@ func (i *InfluxDB) Write(metrics []telegraf.Metric) error {
 		return err
 	}
 
+	var doDebug = len(i.DebugFilter) != 0
 	for _, metric := range metrics {
-		var metricString = metric.String()
-		var doDebug = len(i.DebugFilter) != 0 && strings.Contains(metricString, i.DebugFilter)
 		if doDebug {
-			log.Printf("D! InfluxDB Output Debug Filter matched outgoing metric: %s\n", metricString)
+			var metricString = metric.String()
+			doDebug = doDebug && strings.Contains(metricString, i.DebugFilter)
+			if doDebug {
+				log.Printf("D! InfluxDB Output Debug Filter matched outgoing metric: %s\n", metricString)
+			}
 		}
 		// collect meta-metrics for use in service protection
 		var measurementName = metric.Name()
