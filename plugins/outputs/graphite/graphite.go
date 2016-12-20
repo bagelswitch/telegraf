@@ -5,12 +5,12 @@ import (
 	"log"
 	"math/rand"
 	"net"
-	"strings"
 	"time"
 
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/plugins/outputs"
 	"github.com/influxdata/telegraf/plugins/serializers"
+	"github.com/influxdata/telegraf/metric"
 )
 
 type Graphite struct {
@@ -78,32 +78,26 @@ func (g *Graphite) Description() string {
 // occurs, logging each unsuccessful. If all servers fail, return error.
 func (g *Graphite) Write(metrics []telegraf.Metric) error {
 	// Prepare data
-	var bp []string
+	var batch []byte
 	s, err := serializers.NewGraphiteSerializer(g.Prefix, g.Template)
 	if err != nil {
 		return err
 	}
 
 	for _, metric := range metrics {
-		var metricString = metric.String()
-		var doDebug = len(g.DebugFilter) != 0 && strings.Contains(metricString, g.DebugFilter)
-		if doDebug {
-			log.Printf("D! Graphite Output Debug Filter matched outgoing metric: %s\n", metricString)
+		buf, err := s.Serialize(metric)
+		if err != nil {
+			log.Printf("E! Error serializing some metrics to graphite: %s", err.Error())
 		}
-		gMetrics, err := s.Serialize(metric)
-		for _, graphiteString := range gMetrics {
+		batch = append(batch, buf...)
+		for _, graphiteString := range buf {
 			if doDebug {
 				if strings.Contains(graphiteString, g.DebugFilter) {
 					log.Printf("D! Graphite Output Debug metric line: %s\n", graphiteString)
 				}
 			}
 		}
-		if err != nil {
-			log.Printf("E! Error serializing some metrics to graphite: %s", err.Error())
-		}
-		bp = append(bp, gMetrics...)
 	}
-	graphitePoints := strings.Join(bp, "\n") + "\n"
 
 	// This will get set to nil if a successful write occurs
 	err = errors.New("Could not write to any Graphite server in cluster\n")
@@ -114,7 +108,7 @@ func (g *Graphite) Write(metrics []telegraf.Metric) error {
 		if g.Timeout > 0 {
 			g.conns[n].SetWriteDeadline(time.Now().Add(time.Duration(g.Timeout) * time.Second))
 		}
-		if _, e := g.conns[n].Write([]byte(graphitePoints)); e != nil {
+		if _, e := g.conns[n].Write(batch); e != nil {
 			// Error
 			log.Println("E! Graphite Error: " + e.Error())
 			// Let's try the next one
