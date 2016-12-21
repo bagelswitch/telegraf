@@ -245,21 +245,21 @@ func (i *InfluxDB) Write(metrics []telegraf.Metric) error {
 			if doDebug {
 				log.Printf("D! InfluxDB Output Debug Filter matched outgoing metric: %s\n", metricString)
 			}
-		}
-		// collect meta-metrics for use in service protection
-		var measurementName = metric.Name()
-		if _, measureok := freqTable[measurementName]; !measureok {
-			freqTable[measurementName] = map[string]map[string]int64{}
-		}
-		var tags = metric.Tags()
-		for tagName, tagVal := range tags {
-			if _, tagok := freqTable[measurementName][tagName]; !tagok {
-				freqTable[measurementName][tagName] = map[string]int64{}
+			// collect meta-metrics for use in service protection
+			var measurementName = metric.Name()
+			if _, measureok := freqTable[measurementName]; !measureok {
+				freqTable[measurementName] = map[string]map[string]int64{}
 			}
-			if _, ok := freqTable[measurementName][tagName][tagVal]; !ok {
-				freqTable[measurementName][tagName][tagVal] = int64(1)
+			var tags = metric.Tags()
+			for tagName, tagVal := range tags {
+				if _, tagok := freqTable[measurementName][tagName]; !tagok {
+					freqTable[measurementName][tagName] = map[string]int64{}
+				}
+				if _, ok := freqTable[measurementName][tagName][tagVal]; !ok {
+					freqTable[measurementName][tagName][tagVal] = int64(1)
+				}
+				freqTable[measurementName][tagName][tagVal] += int64(1)
 			}
-			freqTable[measurementName][tagName][tagVal] += int64(1)
 		}
 		bp.AddPoint(metric.Point())
 	}
@@ -285,12 +285,15 @@ func (i *InfluxDB) Write(metrics []telegraf.Metric) error {
 		}
 	}
 
-	// emit the current frequency table for service protection info
-	var elapsed = time.Since(lastDump)
-	if elapsed.Seconds() > float64(60) {
-		lastDump = time.Now()
-		DumpFreqTable(freqTable)
+	if doDebug {
+		// emit the current frequency table for service protection info
+		var elapsed = time.Since(lastDump)
+		if elapsed.Seconds() > float64(60) {
+			lastDump = time.Now()
+			DumpFreqTable(freqTable)
+		}
 	}
+
 	return err
 }
 
