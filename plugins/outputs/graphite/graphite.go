@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"net"
 	"strings"
-	"time"
 
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/plugins/outputs"
@@ -37,6 +36,14 @@ var sampleConfig = `
   ## timeout in seconds for the write connection to graphite
   timeout = 2
 `
+
+func (g *Graphite) Connect() error {
+	return nil
+}
+
+func (g *Graphite) Close() error {
+	return nil
+}
 
 func (g *Graphite) SampleConfig() string {
 	return sampleConfig
