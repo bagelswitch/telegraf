@@ -38,34 +38,6 @@ var sampleConfig = `
   timeout = 2
 `
 
-func (g *Graphite) Connect() error {
-	// Set default values
-	if g.Timeout <= 0 {
-		g.Timeout = 2
-	}
-	if len(g.Servers) == 0 {
-		g.Servers = append(g.Servers, "localhost:2003")
-	}
-	// Get Connections
-	var conns []net.Conn
-	for _, server := range g.Servers {
-		conn, err := net.DialTimeout("tcp", server, time.Duration(g.Timeout)*time.Second)
-		if err == nil {
-			conns = append(conns, conn)
-		}
-	}
-	g.conns = conns
-	return nil
-}
-
-func (g *Graphite) Close() error {
-	// Closing all connections
-	for _, conn := range g.conns {
-		conn.Close()
-	}
-	return nil
-}
-
 func (g *Graphite) SampleConfig() string {
 	return sampleConfig
 }
@@ -110,25 +82,26 @@ func (g *Graphite) Write(metrics []telegraf.Metric) error {
 	err = errors.New("Could not write to any Graphite server in cluster\n")
 
 	// Send data to a random server
-	p := rand.Perm(len(g.conns))
+	p := rand.Perm(len(g.Servers))
 	for _, n := range p {
-		if g.Timeout > 0 {
-			g.conns[n].SetWriteDeadline(time.Now().Add(time.Duration(g.Timeout) * time.Second))
+		conn, e := net.Dial("udp", g.Servers[n])
+		if e != nil {
+			log.Println("E! Graphite UDP Connection Error: " + e.Error())
 		}
-		if _, e := g.conns[n].Write(batch); e != nil {
+		if _, e := conn.Write(batch); e != nil {
 			// Error
-			log.Println("E! Graphite Error: " + e.Error())
+			log.Println("E! Graphite UDP Write Error: " + e.Error())
 			// Let's try the next one
 		} else {
 			// Success
 			err = nil
+		}
+		conn.Close()
+		if err == nil {
 			break
 		}
 	}
-	// try to reconnect
-	if err != nil {
-		g.Connect()
-	}
+
 	return err
 }
 
