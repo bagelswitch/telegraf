@@ -1,7 +1,6 @@
 package graphite
 
 import (
-	"errors"
 	"log"
 	"math/rand"
 	"net"
@@ -69,9 +68,6 @@ func (g *Graphite) Write(metrics []telegraf.Metric) error {
 		if err != nil {
 			log.Println("E! Graphite UDP Connection Error: " + err.Error())
 		} else {
-			// This will get set to nil if a successful write occurs
-			err = errors.New("Could not write to any Graphite server in cluster\n")
-
 			var batch []byte
 			var doDebug = len(g.DebugFilter) != 0
 			for _, metric := range metrics {
@@ -85,23 +81,20 @@ func (g *Graphite) Write(metrics []telegraf.Metric) error {
 				buf, err := s.Serialize(metric)
 				if err != nil {
 					log.Printf("E! Error serializing some metrics to graphite: %s", err.Error())
-				}
-				if doDebug {
-					var graphiteString = string(buf[:])
-					if strings.Contains(graphiteString, g.DebugFilter) {
-						log.Printf("D! Graphite Output Debug metric line: %s\n", graphiteString)
-					}
-				}
-				if (len(batch) + len(buf)) > 64000 {
-					if _, err := conn.Write(batch); err != nil {
-						// Error
-						log.Println("E! Graphite UDP Write Error: " + err.Error())
-					} else {
-						// Success
-						batch = nil
-						batch = append(batch, buf...)
-					}
 				} else {
+					if doDebug {
+						var graphiteString = string(buf[:])
+						if strings.Contains(graphiteString, g.DebugFilter) {
+							log.Printf("D! Graphite Output Debug metric line: %s\n", graphiteString)
+						}
+					}
+					if (len(batch) + len(buf)) > 64000 {
+						if _, err := conn.Write(batch); err != nil {
+							// Error
+							log.Println("E! Graphite UDP Write Error: " + err.Error())
+						}
+						batch = nil
+					}
 					batch = append(batch, buf...)
 				}
 			}
