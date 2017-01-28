@@ -67,7 +67,7 @@ func (g *Graphite) Write(metrics []telegraf.Metric) error {
 	for _, n := range p {
 		conn, err := net.Dial("udp", g.Servers[n])
 		if err != nil {
-			log.Println("E! Graphite UDP Connection Error: " + e.Error())
+			log.Println("E! Graphite UDP Connection Error: " + err.Error())
 		} else {
 			// This will get set to nil if a successful write occurs
 			err = errors.New("Could not write to any Graphite server in cluster\n")
@@ -95,7 +95,7 @@ func (g *Graphite) Write(metrics []telegraf.Metric) error {
 				if (len(batch) + len(buf)) > 64000 {
 					if _, err := conn.Write(batch); err != nil {
 						// Error
-						log.Println("E! Graphite UDP Write Error: " + e.Error())
+						log.Println("E! Graphite UDP Write Error: " + err.Error())
 					} else {
 						// Success
 						batch = nil
@@ -108,7 +108,7 @@ func (g *Graphite) Write(metrics []telegraf.Metric) error {
 			if len(batch) > 0 {
 				if _, err := conn.Write(batch); err != nil {
 					// Error
-					log.Println("E! Graphite UDP Write Error: " + e.Error())
+					log.Println("E! Graphite UDP Write Error: " + err.Error())
 				}
 			}
 		}
